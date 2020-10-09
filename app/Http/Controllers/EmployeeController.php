@@ -21,7 +21,7 @@ class EmployeeController extends Controller
         $request_all = $request->all();
 
         $request_all = Helper::cleanAll($request_all);
-        DB::beginTransaction();
+        
         $rules = [
             'first_name' => 'required',
             'last_name' => 'required',
@@ -46,7 +46,16 @@ class EmployeeController extends Controller
             'date_of_birth.date' => 'DOB is not a valid date',
             'department.required' => 'Please specify a department',
             'department.integer' => 'Department should be an integer reference',
-            'department.exists' => 'This department does not exist'
+            'department.exists' => 'This department does not exist',
+            'address.*.id.present' => 'Address id is required',
+            'address.*.name.required' => 'Name is required',
+            'address.*.country.required' => 'Country is required',
+            'address.*.address.required' => 'Address is required',
+            'address.*.state.required' => 'State is required',
+            'address.*.city.required' => 'City is required',
+            'contact_numbers.*.id.present' => 'Contact id is required',
+            'contact_numbers.*.phone_cc.required' => 'Country code is required',
+            'contact_numbers.*.phone.required' => 'Phone number is required'
         ];
 
         $validator = Validator::make($request_all, $rules, $messages);
@@ -121,7 +130,7 @@ class EmployeeController extends Controller
             //Remove addresses which were not sent back
             $address_not_to_remove =  array_column($request_all['address'], 'id');
 
-            EmployeeAddress::whereNotIn('id', $address_not_to_remove)->delete();
+            EmployeeAddress::where('employee_id', $employee->id)->whereNotIn('id', $address_not_to_remove)->delete();
             
             
             
@@ -149,7 +158,7 @@ class EmployeeController extends Controller
             //Remove numbers which were not sent back
             $contact_numbers_not_to_remove =  array_column($request_all['contact_numbers'], 'id');
 
-            EmployeeContactNumber::whereNotIn('id', $contact_numbers_not_to_remove)->delete();
+            EmployeeContactNumber::where('employee_id', $employee->id)->whereNotIn('id', $contact_numbers_not_to_remove)->delete();
         }
 
         $employee = Employee::with(['address' =>function($query){
