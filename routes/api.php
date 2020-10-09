@@ -20,3 +20,5 @@ Route::post('/employee/add', 'EmployeeController@store');
 Route::post('/employee/edit', 'EmployeeController@store');
 
 Route::post('/employee/delete', 'EmployeeController@delete');
+
+Route::post('/employee/view', 'EmployeeController@view');

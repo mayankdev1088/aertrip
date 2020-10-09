@@ -134,7 +134,11 @@ class EmployeeController extends Controller
             }
         }
 
-        $employee = Employee::with('address', 'contact')->find($employee->id);
+        $employee = Employee::with(['address' =>function($query){
+            $query->selectRaw('id, employee_id, address, country, state, city, postal_code');
+        }])->with(['contact_numbers' => function($query){
+            $query->selectRaw('id, employee_id, phone_cc, phone');
+        }])->detail()->find($employee->id);
 
         
 
@@ -190,4 +194,52 @@ class EmployeeController extends Controller
             
         ], Response::HTTP_OK);
     }
+
+    public function view(Request $request){
+        $request_all = $request->all();
+
+        $request_all = Helper::cleanAll($request_all);
+        
+        $rules = [
+            'id' => 'required|integer'
+        ];
+
+        $messages = [
+            'id.required' => 'Id is required',
+            'id.integer' => 'Id should be an integer'
+        ];
+
+        $validator = Validator::make($request_all, $rules, $messages);
+
+        if($validator->fails()){
+			return Helper::displayErrors($validator);
+        }
+
+        $id = $request->id;
+
+        $employee_exists = Employee::where('id', $id)->count();
+
+        if(!$employee_exists){
+
+            return response()->json([
+                'result' => false,
+                'status_code' => Response::HTTP_NOT_ACCEPTABLE, 
+                'message' => 'Could not find employee'
+            ], Response::HTTP_NOT_ACCEPTABLE );
+        }
+
+        $employee = Employee::with(['address' =>function($query){
+            $query->selectRaw('id, employee_id, address, country, state, city, postal_code');
+        }])->with(['contact_numbers' => function($query){
+            $query->selectRaw('id, employee_id, phone_cc, phone');
+        }])->detail()->find($id);
+
+        return response()->json([
+            'result' => true, 
+            'status_code' => Response::HTTP_OK, 
+            'data' => ['employee' => $employee]
+            
+        ], Response::HTTP_OK);
+    }
+
 }
