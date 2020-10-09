@@ -11,14 +11,7 @@ use Helper;
 
 class DepartmentController extends Controller
 {
-    private $rules = [
-		'name' => 'required|unique:department'
-	];
-
-	private $messages = [
-		'name.required' => 'Name is required',
-		'name.unique' => 'Name already exists'
-    ];
+    
     
     public function store(Request $request){
 
@@ -26,7 +19,16 @@ class DepartmentController extends Controller
 
         $request_all['name'] = Helper::sanitize($request_all['name']);
 
-        $validator = Validator::make($request_all, $this->rules, $this->messages);
+        $rules = [
+            'name' => 'required|unique:department'
+        ];
+    
+        $messages = [
+            'name.required' => 'Name is required',
+            'name.unique' => 'Name already exists'
+        ];
+
+        $validator = Validator::make($request_all, $rules, $messages);
 
 		if($validator->fails()){
 			return Helper::displayErrors($validator);

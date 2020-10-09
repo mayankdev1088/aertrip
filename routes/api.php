@@ -17,4 +17,6 @@ Route::post('/department/add', 'DepartmentController@store');
 
 Route::post('/employee/add', 'EmployeeController@store');
 
-Route::post('/employee/{employee_id}/edit', 'EmployeeController@store');
+Route::post('/employee/edit', 'EmployeeController@store');
+
+Route::post('/employee/delete', 'EmployeeController@delete');

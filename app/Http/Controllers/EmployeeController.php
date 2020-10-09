@@ -15,46 +15,49 @@ use Carbon\Carbon;
 
 class EmployeeController extends Controller
 {
-    private $rules = [
-        'first_name' => 'required',
-        'last_name' => 'required',
-        'date_of_birth' => 'required|date',
-        'department' => 'required|integer|exists:department,id',
-        'address.*.name' => 'required',
-        'address.*.country' => 'required|exists:country,id',
-        'address.*.address' => 'required',
-        'address.*.state' => 'required',
-        'address.*.city' => 'required',
-        'address.*.postal_code' => 'required',
-        'contact_numbers.*.phone_cc' => 'required',
-        'contact_numbers.*.phone' => 'required'
-	];
-
-	private $messages = [
-        'first_name.required' => 'First name is required',
-        'last_name.required' => 'Last name is required',
-        'date_of_birth.required' => 'DOB is required',
-        'date_of_birth.date' => 'DOB is not a valid date',
-        'department.required' => 'Please specify a department',
-        'department.integer' => 'Department should be an integer reference',
-        'department.exists' => 'This department does not exist'
-    ];
-
-    public function store(Request $request, $employee_id = null){
+    
+    public function store(Request $request){
         
         $request_all = $request->all();
 
         $request_all = Helper::cleanAll($request_all);
 
-        $validator = Validator::make($request_all, $this->rules, $this->messages);
+        $rules = [
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'date_of_birth' => 'required|date',
+            'department' => 'required|integer|exists:department,id',
+            'address.*.id' => 'present',
+            'address.*.name' => 'required',
+            'address.*.country' => 'required|exists:country,id',
+            'address.*.address' => 'required',
+            'address.*.state' => 'required',
+            'address.*.city' => 'required',
+            'address.*.postal_code' => 'required',
+            'contact_numbers.*.id' => 'present',
+            'contact_numbers.*.phone_cc' => 'required',
+            'contact_numbers.*.phone' => 'required'
+        ];
+    
+        $messages = [
+            'first_name.required' => 'First name is required',
+            'last_name.required' => 'Last name is required',
+            'date_of_birth.required' => 'DOB is required',
+            'date_of_birth.date' => 'DOB is not a valid date',
+            'department.required' => 'Please specify a department',
+            'department.integer' => 'Department should be an integer reference',
+            'department.exists' => 'This department does not exist'
+        ];
+
+        $validator = Validator::make($request_all, $rules, $messages);
 
         if($validator->fails()){
 			return Helper::displayErrors($validator);
         }
 
-        $id = $employee_id;
+        $id = $request->id;
 
-        if(!empty($employee_id)){
+        if(!empty($id)){
             $employee_exists = Employee::where('id', $id)->count();
 
             if(!$employee_exists){
@@ -143,5 +146,48 @@ class EmployeeController extends Controller
             
         ], Response::HTTP_OK);
 
+    }
+
+    public function delete(Request $request){
+        $request_all = $request->all();
+
+        $request_all = Helper::cleanAll($request_all);
+        
+        $rules = [
+            'id' => 'required|integer'
+        ];
+
+        $messages = [
+            'id.required' => 'Id is required',
+            'id.integer' => 'Id should be an integer'
+        ];
+
+        $validator = Validator::make($request_all, $rules, $messages);
+
+        if($validator->fails()){
+			return Helper::displayErrors($validator);
+        }
+
+        $id = $request->id;
+
+        $employee_exists = Employee::where('id', $id)->count();
+
+        if(!$employee_exists){
+
+            return response()->json([
+                'result' => false,
+                'status_code' => Response::HTTP_NOT_ACCEPTABLE, 
+                'message' => 'Could not find employee'
+            ], Response::HTTP_NOT_ACCEPTABLE );
+        }
+
+        Employee::where('id', $id)->delete();
+
+        return response()->json([
+            'result' => true, 
+            'status_code' => Response::HTTP_OK, 
+            'message' => "Employee deleted"
+            
+        ], Response::HTTP_OK);
     }
 }
