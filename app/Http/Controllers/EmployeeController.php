@@ -21,7 +21,7 @@ class EmployeeController extends Controller
         $request_all = $request->all();
 
         $request_all = Helper::cleanAll($request_all);
-
+        DB::beginTransaction();
         $rules = [
             'first_name' => 'required',
             'last_name' => 'required',
@@ -99,7 +99,7 @@ class EmployeeController extends Controller
             EmployeeAddress::where('employee_id', $employee->id)->delete();
         }else{
             
-            foreach($request_all['address'] as $address){
+            foreach($request_all['address'] as &$address){
 
                 $address_data = [
                     'id' => empty($address['id']) ? null : $address['id'],
@@ -112,8 +112,19 @@ class EmployeeController extends Controller
                     'postal_code' => $address['postal_code']
                 ];
 
-                EmployeeAddress::updateOrCreate(['id' => $address['id']], $address_data);
+                $employee_address = EmployeeAddress::updateOrCreate(['id' => $address['id']], $address_data);
+
+                $address['id'] = $employee_address->id;
+
             }
+
+            //Remove addresses which were not sent back
+            $address_not_to_remove =  array_column($request_all['address'], 'id');
+
+            EmployeeAddress::whereNotIn('id', $address_not_to_remove)->delete();
+            
+            
+            
         }
 
         //Add/update contact number
@@ -121,7 +132,7 @@ class EmployeeController extends Controller
             EmployeeContactNumber::where('employee_id', $employee->id)->delete();
         }else{
             
-            foreach($request_all['contact_numbers'] as $contact_number){
+            foreach($request_all['contact_numbers'] as &$contact_number){
 
                 $contact_data = [
                     'id' => empty($contact_number['id']) ? null : $contact_number['id'],
@@ -130,12 +141,19 @@ class EmployeeController extends Controller
                     'phone' => $contact_number['phone']
                 ];
 
-                EmployeeContactNumber::updateOrCreate(['id' => $contact_number['id']], $contact_data);
+                $employee_contact_number = EmployeeContactNumber::updateOrCreate(['id' => $contact_number['id']], $contact_data);
+
+                $contact_number['id'] = $employee_contact_number->id;
             }
+
+            //Remove numbers which were not sent back
+            $contact_numbers_not_to_remove =  array_column($request_all['contact_numbers'], 'id');
+
+            EmployeeContactNumber::whereNotIn('id', $contact_numbers_not_to_remove)->delete();
         }
 
         $employee = Employee::with(['address' =>function($query){
-            $query->selectRaw('id, employee_id, address, country, state, city, postal_code');
+            $query->selectRaw('id, employee_id, name, address, country, state, city, postal_code');
         }])->with(['contact_numbers' => function($query){
             $query->selectRaw('id, employee_id, phone_cc, phone');
         }])->detail()->find($employee->id);
@@ -229,7 +247,7 @@ class EmployeeController extends Controller
         }
 
         $employee = Employee::with(['address' =>function($query){
-            $query->selectRaw('id, employee_id, address, country, state, city, postal_code');
+            $query->selectRaw('id, employee_id, name, address, country, state, city, postal_code');
         }])->with(['contact_numbers' => function($query){
             $query->selectRaw('id, employee_id, phone_cc, phone');
         }])->detail()->find($id);
@@ -262,7 +280,7 @@ class EmployeeController extends Controller
         }
 
         $employees = Employee::with(['address' =>function($query){
-            $query->selectRaw('id, employee_id, address, country, state, city, postal_code');
+            $query->selectRaw('id, employee_id, name, address, country, state, city, postal_code');
         }])->with(['contact_numbers' => function($query){
             $query->selectRaw('id, employee_id, phone_cc, phone');
         }])->detail($request)->get();
