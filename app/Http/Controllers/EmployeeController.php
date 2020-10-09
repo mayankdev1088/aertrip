@@ -242,4 +242,37 @@ class EmployeeController extends Controller
         ], Response::HTTP_OK);
     }
 
+    public function search(Request $request){
+        $request_all = $request->all();
+
+        $request_all = Helper::cleanAll($request_all);
+        
+        $rules = [
+            'keyword' => 'present'
+        ];
+
+        $messages = [
+            'keyword.present' => 'Keyword is required'
+        ];
+
+        $validator = Validator::make($request_all, $rules, $messages);
+
+        if($validator->fails()){
+			return Helper::displayErrors($validator);
+        }
+
+        $employees = Employee::with(['address' =>function($query){
+            $query->selectRaw('id, employee_id, address, country, state, city, postal_code');
+        }])->with(['contact_numbers' => function($query){
+            $query->selectRaw('id, employee_id, phone_cc, phone');
+        }])->detail($request)->get();
+
+        return response()->json([
+            'result' => true, 
+            'status_code' => Response::HTTP_OK, 
+            'data' => ['employees' => $employees]
+            
+        ], Response::HTTP_OK);
+    }
+
 }
