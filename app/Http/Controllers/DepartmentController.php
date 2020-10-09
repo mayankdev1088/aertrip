@@ -40,9 +40,8 @@ class DepartmentController extends Controller
             'result' => true, 
             'status_code' => Response::HTTP_OK, 
             'message' => 'Department created',
-            'data' => [
-                $department
-            ]
+            'data' => ['department' => $department]
+            
             
         ], Response::HTTP_OK);
     }

@@ -25,6 +25,7 @@ class Helper
         } else {
             return response()->json([
                 'result' => false,
+                'status_code' => Response::HTTP_BAD_REQUEST, 
                 'errors' => $error_messages
             ], Response::HTTP_BAD_REQUEST);
         }
@@ -38,6 +39,29 @@ class Helper
             ],
             Response::HTTP_INTERNAL_SERVER_ERROR
         );
+    }
+
+    public static function cleanAll($values){
+        array_walk_recursive($values, function(&$value){
+            return $value = self::sanitize($value);
+        });
+
+        return $values;
+    }
+
+    public static function generateEmployeeNumber($employee){
+
+        $number = $employee->id;
+    
+        $year = date('y', strtotime($employee->created_at));
+    
+        $month = date('m', strtotime($employee->created_at));
+    
+        $employee_number = sprintf('EMP%s%s%s', $year, $month, $number);
+    
+        $employee->employee_number = $employee_number;
+    
+        $employee->save();
     }
 
     public static function sanitize($value)
